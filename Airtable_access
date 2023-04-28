@@ -1,0 +1,45 @@
+import requests
+import json
+
+# Specify API endpoint and parameters
+endpoint = "https://api.airtable.com/v0/YOUR_BASE_ID/YOUR_TABLE_NAME"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY"
+}
+
+# Define function to fetch records
+def fetch_records():
+    records = []
+    offset = None
+    while True:
+        params = {}
+        if offset:
+            params["offset"] = offset
+        response = requests.get(endpoint, headers=headers, params=params)
+        data = response.json()
+        records += data.get("records", [])
+        offset = data.get("offset")
+        if not offset:
+            break
+    return records
+
+# Define function to filter records
+def filter_records(records, field_name, field_value):
+    return [r for r in records if r.get("fields", {}).get(field_name) == field_value]
+
+# Define function to sort records
+def sort_records(records, field_name, reverse=False):
+    return sorted(records, key=lambda r: r.get("fields", {}).get(field_name), reverse=reverse)
+
+# Define function to aggregate records
+def aggregate_records(records, field_name, aggregation_function):
+    field_values = [r.get("fields", {}).get(field_name) for r in records]
+    return aggregation_function(field_values)
+
+# Example usage
+if __name__ == "__main__":
+    records = fetch_records()
+    filtered_records = filter_records(records, "status", "done")
+    sorted_records = sort_records(filtered_records, "created_at", reverse=True)
+    count = aggregate_records(sorted_records, "status", len)
+    print(count)
